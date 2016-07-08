@@ -1,2 +1,2 @@
 # autoreg
-Automatic Course Registration Monitoring System
+Automatic Registration Monitoring System
