@@ -39,7 +39,7 @@ class Mech
 
   def select_term _x
     puts "Using term #{_x}"
-    link = @page.link_with text: _x
+    link = @page.link_with text: /#{_x}/i
 
     begin
       if link == nil
@@ -55,7 +55,13 @@ class Mech
 
   def select_department _x
     puts "  Selecting department #{_x}"
-    link = @page.link_with text: _x
+
+    prompt_link = @page.link_with text: /continue/i
+    if prompt_link
+      @page = prompt_link.click
+    end
+
+    link = @page.link_with text: /#{_x}/i
     subpages = Hash.new
 
     begin
@@ -132,7 +138,6 @@ class Mech
 
         course_data[:sections].each do |section_name, _d|
           section = Section.find_or_initialize_by name: section_name, course_id: course.id
-          ap section
           # section.session = _d[:session]
           section.cs_type = _d[:type]
           section.unit = _d[:units].to_i
