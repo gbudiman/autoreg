@@ -10,6 +10,7 @@ class Mech
     @crawl = YAML.load_file(CRAWL_PATH)
     @agent = Mechanize.new
     @page = nil
+    @current_term = nil
     @courses = Hash.new
   end
 
@@ -45,6 +46,8 @@ class Mech
       if link == nil
         raise NoMethodError, "No such term: #{_x}"
       else
+        @current_term = _x
+        @courses[@current_term] ||= Hash.new
         @page = link.click
       end
     rescue => e
@@ -100,7 +103,7 @@ class Mech
       course_id = course_header.at('.crsID').text.strip[0..-2]
       course_name = course_header.at('.crsTitl').text
 
-      @courses[course_id] ||= {
+      @courses[@current_term][course_id] ||= {
         course_name: course_name,
         sections: Hash.new
       }
@@ -119,11 +122,8 @@ class Mech
           end
         end
 
-        @courses[course_id][:sections][h_details[:section]] = h_details
+        @courses[@current_term][course_id][:sections][h_details[:section]] = h_details
       end
-
-      #ap h_details
-      #ap '--------'
     end
   end
 
@@ -131,21 +131,27 @@ class Mech
     db_status
 
     ActiveRecord::Base.transaction do
-      @courses.each do |course_code, course_data|
-        course = Course.find_or_initialize_by code: course_code
-        course.name = course_data[:course_name]
-        course.save
+      @courses.each do |term_name, term_data|
+        term = Term.find_or_initialize_by name: term_name
+        term.save
 
-        course_data[:sections].each do |section_name, _d|
-          section = Section.find_or_initialize_by name: section_name, course_id: course.id
-          # section.session = _d[:session]
-          section.cs_type = _d[:type]
-          section.unit = _d[:units].to_i
-          section.registered = parse_registration(_d[:registered], :actual)
-          section.limit = parse_registration(_d[:registered], :limit)
-          section.location = _d[:location]
+        term_data.each do |course_code, course_data|
+          course = Course.find_or_initialize_by code: course_code, term_id: term.id
+          course.name = course_data[:course_name]
+          course.save
 
-          section.save
+          #ap "Section countscourse_data.count
+          course_data[:sections].each do |section_name, _d|
+            section = Section.find_or_initialize_by name: section_name, course_id: course.id
+            # section.session = _d[:session]
+            section.cs_type = _d[:type]
+            section.unit = _d[:units].to_i
+            section.registered = parse_registration(_d[:registered], :actual)
+            section.limit = parse_registration(_d[:registered], :limit)
+            section.location = _d[:location]
+
+            section.save
+          end
         end
       end
     end
