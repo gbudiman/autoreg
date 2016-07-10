@@ -1,6 +1,2 @@
-"Summer 2016":
-  - "Electrical Engineering"
-  - "Computer Science"
-"Fall 2016":
-  - "Electrical Engineering"
-  - "Computer Science"
+"Summer 2016": [ee, csci, ctin, ctan]
+"Fall 2016": [ee, csci, ctin, ctan]

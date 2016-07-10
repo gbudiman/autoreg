@@ -3,7 +3,7 @@ class Mech
   CRAWL_PATH = Rails.root.join('config', 'crawl_path.yml').to_s
   LOGIN_URL = 'https://webreg.usc.edu'
 
-  attr_reader :account, :crawl
+  attr_reader :account, :crawl, :page
 
   def initialize
     @account = YAML.load_file(MASTER_ACCOUNT_PATH).symbolize_keys
@@ -36,6 +36,22 @@ class Mech
         select_department dept
       end
     end
+
+    return self
+  end
+
+  def list_terms
+    ap @page.links.select{ |x| x.text =~ /\d+ classes/i }.collect{ |x| x.text }
+  end
+
+  def list_departments
+    depts = Hash.new
+    @page.links.select{ |x| x.href =~ /\/courses\?deptid\=/i }.each do |link|
+      link.href =~ /deptid=(\w+)/i
+      depts[$1.downcase.to_sym] = link.text
+    end
+
+    ap Hash[depts.sort]
   end
 
   def select_term _x
@@ -64,7 +80,8 @@ class Mech
       @page = prompt_link.click
     end
 
-    link = @page.link_with text: /#{_x}/i
+    # link = @page.link_with text: /#{_x}/i
+    link = @page.link_with href: /#{_x}$/i
     subpages = Hash.new
 
     begin
