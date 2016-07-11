@@ -54,6 +54,16 @@ class Mech
     ap Hash[depts.sort]
   end
 
+  def list_courses
+    courses = Hash.new
+
+    @courses.values.first.each do |code, data|
+      courses[code] = data[:course_name]
+    end
+
+    ap Hash[courses.sort]
+  end
+
   def select_term _x
     puts "Using term #{_x}"
     link = @page.link_with text: /#{_x}/i
@@ -163,8 +173,9 @@ class Mech
             # section.session = _d[:session]
             section.cs_type = _d[:type]
             section.unit = _d[:units].to_i
-            section.registered = parse_registration(_d[:registered], :actual)
-            section.limit = parse_registration(_d[:registered], :limit)
+            section.registered, section.limit = parse_registration _d[:registered]
+            section.time = _d[:time]
+            section.days = _d[:days]
             section.location = _d[:location]
 
             section.save
@@ -186,20 +197,15 @@ private
     ap "Courses: #{Course.count} | Sections: #{Section.count}"
   end
 
-  def parse_registration _raw, _part
+  def parse_registration _raw
     case _raw
     when /closed/i
-      return -1
+      return [-1, -1]
     else
-      if _raw =~ /(\d+) of (\d+)/
-        case _part
-        when :actual
-          return $1.to_i
-        when :limit
-          return $2.to_i
-        end
+      if _raw =~ /(\d+)[^\d]+(\d+)/i
+        return [$1.to_i, $2.to_i]
       else
-        return -2
+        return [-2, -2]
       end
     end
   end
