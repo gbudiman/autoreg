@@ -7,22 +7,33 @@ class Course < ActiveRecord::Base
   validates :term, presence: true
 
   def self.search _x
-    course = nil
     case _x
-    when /([a-z]+)\-?(\d+)/i
+    when /\A([a-z]+)\-?(\d+)\z/i
       dept = $1.upcase
       course_id = $2
 
       search_string = "#{dept}-#{course_id}"
       courses = Course.joins(:term).where code: search_string
-    end
 
-    if courses == nil
-      puts "#{search_string} does not exist"
-    else
-      courses.each do |course|
-        course.denormalize_sections
+      if courses == nil
+        puts "#{search_string} does not exist"
+      else
+        courses.each do |course|
+          course.denormalize_sections
+        end
       end
+    when /\A([a-z]+)\*\z/i
+      courses = Course.joins(:term).where('code LIKE :x', x: "#{$1.upcase}%")
+      Course.denormalize courses
+    when /\A([a-z]+)\-?(\d+)\*\z/i
+      courses = Course.joins(:term).where('code LIKE :x', x: "#{$1.upcase}-#{$2}%")
+      Course.denormalize courses
+    end
+  end
+
+  def self.denormalize courses
+    courses.each do |course|
+      puts "#{course.code} - #{course.name} [#{course.term.name}]"
     end
   end
 

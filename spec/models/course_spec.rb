@@ -7,4 +7,12 @@ RSpec.describe Course, type: :model do
     Course.search 'csci574'
     Course.search 'ee450'
   end
+
+  it 'should be able to list courses in a department' do
+    Course.search 'ee*'
+  end
+
+  it 'should be able to list courses with wildcard' do
+    Course.search 'csci5*'
+  end
 end
